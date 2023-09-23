@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GrowTools</title>
+    <style>
+      .btn a {
+        text-decoration: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div>
+      <h1>Growtopia Items dat Tools</h1>
+      <input required type="file" id="itemDat" onchange="itemTool(this)" />
+      <div style="margin-top: 10px">
+        <button id="decode" disabled onclick="decodeBtn(this)">Decode</button>
+        <button id="encode" disabled onclick="encodeBtn(this)">Encode (Soon)</button>
+      </div>
+      <div style="margin-top: 10px" class="btn">
+        <button disabled>
+          <a id="downloadDecode">Download Decode JSON</a>
+        </button>
+        <button id="encode" disabled onclick="downloadEncodeBtn(this)">
+          Download Encode dat (Soon)
+        </button>
+      </div>
+      <div style="margin-top: 10px">
+        <a href="https://github.com/JadlionHD/ItemTools">Source code</a>
+      </div>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
