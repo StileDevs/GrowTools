@@ -455,7 +455,9 @@ class ItemsDat {
         item.texture2 = await this.readString({ id: item.id });
         item.extraOptions = await this.readString({ id: item.id });
 
-        item.extraBytes = this.data.buffer.slice(this.mempos, (this.mempos += 80));
+        item.extraBytes = Array.from(
+          new Uint8Array(this.data.buffer.slice(this.mempos, (this.mempos += 80)))
+        );
 
         if (meta.version >= 11) {
           item.punchOptions = await this.readString({ id: item.id });
@@ -464,7 +466,9 @@ class ItemsDat {
             item.flags4 = this.data.getInt32(this.mempos, true);
             this.mempos += 4;
 
-            item.bodyPart = this.data.buffer.slice(this.mempos, (this.mempos += 9));
+            item.bodyPart = Array.from(
+              new Uint8Array(this.data.buffer.slice(this.mempos, (this.mempos += 9)))
+            );
           }
 
           if (meta.version >= 13) {
