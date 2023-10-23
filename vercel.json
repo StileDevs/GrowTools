@@ -1,3 +1,6 @@
 {
-  "rewrites": [{ "source": "/(.*)", "destination": "/dist/index.html" }]
+  "rewrites": [
+    { "source": "/", "destination": "/" },
+    { "source": "/itemsdat", "destination": "/" }
+  ]
 }
