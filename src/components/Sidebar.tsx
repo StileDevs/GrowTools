@@ -1,4 +1,4 @@
-import { ChangeEvent, FC, MouseEvent, ReactNode, useEffect } from "react";
+import { ChangeEvent, FC, ReactNode, useEffect } from "react";
 
 type Props = {
   children: ReactNode;

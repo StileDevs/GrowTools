@@ -33,7 +33,7 @@ const Items: FC<ItemsType> = ({ data }) => {
             </tr>
           </thead>
           <tbody>
-            {data?.map((d, i) => {
+            {data?.map((d) => {
               return (
                 <tr
                   key={d.id}
@@ -76,28 +76,6 @@ export default function ItemsRoute() {
   const btn = document.getElementById("decode") as HTMLButtonElement;
   const decodeDownload = document.getElementById("downloadDecode") as HTMLButtonElement;
   const inputSearch = document.getElementById("table-search") as HTMLInputElement;
-
-  const searchItems = () => {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion, @typescript-eslint/no-non-null-asserted-optional-chain
-    const searched = fileJson?.items.filter((v) =>
-      v.name?.toLowerCase().includes(inputSearch.value.toLowerCase())
-    )!;
-    const newOffset = 0;
-
-    const endOffset = newOffset + itemsPerPage;
-    const currentItems = searched.slice(newOffset, endOffset);
-
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const pageCount = Math.ceil(searched.length / itemsPerPage);
-    console.log("search", { newOffset, endOffset, pageCount });
-
-    setCurrent({
-      endOffset,
-      pageCount,
-      current: currentItems
-    });
-    setActivePage(0);
-  };
 
   const handlePageClick = (event: { selected: number }) => {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion, @typescript-eslint/no-non-null-asserted-optional-chain
