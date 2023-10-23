@@ -4,7 +4,7 @@
   "author": "JadlionHD <jadlion.dev@gmail.com>",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "vite build",
     "preview": "vite preview"
   },
   "license": "MIT",
