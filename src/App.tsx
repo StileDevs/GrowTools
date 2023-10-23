@@ -3,7 +3,6 @@ import { Routes, Route } from "react-router-dom";
 import Main from "./routes/Main";
 import ItemsRoute from "./routes/ItemsRoute";
 import "flowbite";
-import { useEffect } from "react";
 
 function App() {
   return (
