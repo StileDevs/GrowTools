@@ -2,7 +2,6 @@
 import { Routes, Route } from "react-router-dom";
 import Main from "./routes/Main";
 import ItemsRoute from "./routes/ItemsRoute";
-import "flowbite";
 
 function App() {
   return (
