@@ -1,12 +1,11 @@
-import { FC, useEffect, useState } from "react";
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
+import { useEffect, useState } from "react";
 import ItemsDat from "../utils/items";
 import Sidebar from "../components/Sidebar";
 import { ItemDefinition, ItemsDatMeta } from "../types";
 import ReactPaginate from "react-paginate";
-
-type ItemsType = {
-  data: ItemDefinition[];
-};
+import { Modal } from "flowbite";
+import type { ModalOptions, ModalInterface } from "flowbite";
 
 type CurrentPage = {
   endOffset: number;
@@ -14,71 +13,41 @@ type CurrentPage = {
   pageCount: number;
 };
 
-const Items: FC<ItemsType> = ({ data }) => {
-  return (
-    <>
-      <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
-        <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-          <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
-            <tr>
-              <th scope="col" className="px-6 py-3">
-                ID
-              </th>
-              <th scope="col" className="px-6 py-3">
-                Name
-              </th>
-              <th scope="col" className="px-6 py-3">
-                Action
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {data?.map((d) => {
-              return (
-                <tr
-                  key={d.id}
-                  className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
-                >
-                  <th
-                    scope="row"
-                    className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white"
-                  >
-                    {d.id}
-                  </th>
-                  <td className="px-6 py-4">{d.name}</td>
-                  <td className="px-6 py-4">
-                    <a
-                      href="#"
-                      className="font-medium text-blue-600 dark:text-blue-500 hover:underline"
-                    >
-                      Edit
-                    </a>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-    </>
-  );
-};
-
 export default function ItemsRoute() {
   const itemsPerPage = 20;
+  const itemOffset = 0;
 
   const [file, setFile] = useState<ArrayBuffer | null>(null);
   const [fileJson, setFileJson] = useState<ItemsDatMeta | null>(null);
-  const [itemOffset, setItemOffset] = useState<number>(0);
   const [currentPage, setCurrent] = useState<CurrentPage | null>(null);
   const [activePage, setActivePage] = useState<number>(0);
+  const [modalInfo, setModalInfo] = useState<ItemDefinition | null>(null);
 
   const btn = document.getElementById("decode") as HTMLButtonElement;
   const decodeDownload = document.getElementById("downloadDecode") as HTMLButtonElement;
   const inputSearch = document.getElementById("table-search") as HTMLInputElement;
 
+  const modalEl: HTMLElement | null = document.getElementById("showModal");
+
+  const modalOptions: ModalOptions = {
+    placement: "center",
+    backdrop: "static",
+    closable: true,
+    onHide: () => {
+      console.log("modal is hidden");
+    },
+    onShow: () => {
+      console.log("modal is shown");
+    },
+    onToggle: () => {
+      console.log("modal has been toggled");
+    }
+  };
+
+  const modal: ModalInterface = new Modal(modalEl, modalOptions);
+
   const handlePageClick = (event: { selected: number }) => {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion, @typescript-eslint/no-non-null-asserted-optional-chain
+    // eslint-disable-next-line, @typescript-eslint/no-non-null-asserted-optional-chain
     const searched = inputSearch.value
       ? fileJson?.items.filter((v) =>
           v.name?.toLowerCase().includes(inputSearch.value.toLowerCase())
@@ -97,7 +66,7 @@ export default function ItemsRoute() {
   };
 
   useEffect(() => {
-    console.log("changed", file);
+    console.log("imported", file);
     if (file !== null) {
       const itemDat = new ItemsDat(file);
       itemDat.decode().then((d) => {
@@ -165,6 +134,95 @@ export default function ItemsRoute() {
 
   return (
     <>
+      <div
+        id="showModal"
+        tabIndex={-1}
+        aria-hidden="true"
+        className="fixed top-0 left-0 right-0 z-50 hidden w-full p-4 overflow-x-hidden overflow-y-auto md:inset-0 h-[calc(100%-1rem)] max-h-full"
+      >
+        <div className="relative w-full max-w-2xl max-h-full">
+          {/* <!-- Modal content --> */}
+          <div className="relative bg-white rounded-lg shadow dark:bg-gray-700">
+            {/* <!-- Modal header --> */}
+            <div className="flex items-start justify-between p-4 border-b rounded-t dark:border-gray-600">
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+                {modalInfo?.name}
+              </h3>
+              <button
+                type="button"
+                onClick={(ev) => {
+                  modal.hide();
+                  document.querySelector("body > div[modal-backdrop]")?.remove();
+                }}
+                className="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ml-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white"
+              >
+                <svg
+                  className="w-3 h-3"
+                  aria-hidden="true"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 14 14"
+                >
+                  <path
+                    stroke="currentColor"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"
+                  />
+                </svg>
+                <span className="sr-only">Close modal</span>
+              </button>
+            </div>
+            {/* <!-- Modal body --> */}
+            <div className="p-6 space-y-6">
+              {Object.entries(modalInfo || {}).map(([key, value], i) => {
+                return (
+                  <div key={`modalInfo_${i}`}>
+                    <label
+                      htmlFor={`modal_${key}`}
+                      className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                    >{`${key}`}</label>
+                    <input
+                      type="text"
+                      id={`modal_${key}`}
+                      onChange={(ev) => {
+                        // e
+                      }}
+                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-800 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                      value={typeof value === "object" ? `${JSON.stringify(value)}` : `${value}`}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+            {/* <!-- Modal footer --> */}
+            <div className="flex items-center p-6 space-x-2 border-t border-gray-200 rounded-b dark:border-gray-600">
+              <button
+                type="button"
+                onClick={(ev) => {
+                  modal.hide();
+                  document.querySelector("body > div[modal-backdrop]")?.remove();
+                }}
+                className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+              >
+                Save
+              </button>
+              <button
+                type="button"
+                onClick={(ev) => {
+                  modal.hide();
+                  document.querySelector("body > div[modal-backdrop]")?.remove();
+                }}
+                className="text-gray-500 bg-white hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-blue-300 rounded-lg border border-gray-200 text-sm font-medium px-5 py-2.5 hover:text-gray-900 focus:z-10 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-500 dark:hover:text-white dark:hover:bg-gray-600 dark:focus:ring-gray-600"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <Sidebar>
         <h1 className="text-lg dark:text-white">items.dat tools</h1>
         {/* <input required type="file" id="itemDat" onChange={itemTool} accept=".dat" /> */}
@@ -234,7 +292,63 @@ export default function ItemsRoute() {
                 Search
               </button>
             </div>
-            <Items data={currentPage?.current || []} />
+            {/* <Items data={currentPage?.current || []} /> */}
+            <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
+              <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                  <tr>
+                    <th scope="col" className="px-6 py-3">
+                      ID
+                    </th>
+                    <th scope="col" className="px-6 py-3">
+                      Name
+                    </th>
+                    <th scope="col" className="px-6 py-3">
+                      Action
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {currentPage?.current.map((d) => {
+                    return (
+                      <tr
+                        key={d.id}
+                        className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
+                      >
+                        <th
+                          scope="row"
+                          className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white"
+                        >
+                          {d.id}
+                        </th>
+                        <td className="px-6 py-4">{d.name}</td>
+                        <td className="px-6 py-4">
+                          <button
+                            type="button"
+                            dataid={d.id}
+                            onClick={(ev) => {
+                              const btn = ev.target as HTMLButtonElement;
+                              const id = btn.getAttribute("dataid") as string;
+                              const item = fileJson?.items.find(
+                                (v) => v.id === parseInt(id)
+                              ) as ItemDefinition;
+
+                              setModalInfo(item);
+                              console.log(item);
+
+                              modal.show();
+                            }}
+                            className="font-medium text-blue-600 dark:text-blue-500 hover:underline"
+                          >
+                            Edit
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </Sidebar>

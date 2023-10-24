@@ -1,3 +1,8 @@
+declare module "react" {
+  interface HTMLAttributes<T> extends React.DOMAttributes<T> {
+    dataid?: number;
+  }
+}
 export interface StringOptions {
   id?: number;
   encoded?: boolean;
