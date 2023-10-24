@@ -1,3 +1,4 @@
+import { initFlowbite } from "flowbite";
 import { ChangeEvent, FC, ReactNode, useEffect } from "react";
 
 type Props = {
@@ -23,6 +24,7 @@ const Sidebar: FC<Props> = ({ children }) => {
   };
 
   useEffect(() => {
+    initFlowbite();
     if (
       localStorage.getItem("color-theme") === "dark" ||
       (!("color-theme" in localStorage) &&
