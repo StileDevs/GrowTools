@@ -44,9 +44,9 @@ const Sidebar: FC<Props> = ({ children }) => {
   return (
     <>
       <button
-        data-drawer-target="default-sidebar"
-        data-drawer-toggle="default-sidebar"
-        aria-controls="default-sidebar"
+        data-drawer-target="separator-sidebar"
+        data-drawer-toggle="separator-sidebar"
+        aria-controls="separator-sidebar"
         type="button"
         className="inline-flex items-center p-2 mt-2 ml-3 text-sm text-gray-500 rounded-lg sm:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600"
       >
@@ -67,7 +67,7 @@ const Sidebar: FC<Props> = ({ children }) => {
       </button>
 
       <aside
-        id="default-sidebar"
+        id="separator-sidebar"
         className="fixed top-0 left-0 z-40 w-64 h-screen transition-transform -translate-x-full sm:translate-x-0"
         aria-label="Sidebar"
       >
@@ -97,7 +97,9 @@ const Sidebar: FC<Props> = ({ children }) => {
                 <span className="ml-3">Items.dat</span>
               </a>
             </li>
-            <li className="absolute bottom-24">
+          </ul>
+          <ul className="pt-4 mt-4 space-y-2 font-medium border-t border-gray-200 dark:border-gray-700">
+            <li>
               <a
                 href="https://github.com/JadlionHD/GrowTools"
                 className="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group"
@@ -117,8 +119,7 @@ const Sidebar: FC<Props> = ({ children }) => {
                 <span className="ml-3">Source code</span>
               </a>
             </li>
-
-            <li className="absolute bottom-10">
+            <li>
               <label className="relative inline-flex items-center mb-4 cursor-pointer">
                 <input
                   type="checkbox"
