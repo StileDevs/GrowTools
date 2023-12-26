@@ -4,7 +4,7 @@ export default function Main() {
   return (
     <>
       <Sidebar>
-        <h1 className="dark:text-white">Hello world</h1>
+        <h1>Hello world</h1>
       </Sidebar>
     </>
   );

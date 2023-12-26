@@ -5,10 +5,9 @@ module.exports = {
   theme: {
     extend: {}
   },
-
-  plugins: [
-    // eslint-disable-next-line @typescript-eslint/no-var-requires, no-undef
-    require("flowbite/plugin")
-  ],
-  darkMode: "class"
+  daisyui: {
+    themes: ["light", "dark"]
+  },
+  // eslint-disable-next-line no-undef
+  plugins: [require("daisyui")]
 };

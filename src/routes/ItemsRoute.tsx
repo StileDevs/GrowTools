@@ -1,16 +1,17 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { useEffect, useState } from "react";
+import { MouseEvent, useEffect, useState } from "react";
 import ItemsDat from "../utils/items";
 import Sidebar from "../components/Sidebar";
 import { ItemDefinition, ItemsDatMeta } from "../types";
 import ReactPaginate from "react-paginate";
-import { Modal } from "flowbite";
-import type { ModalOptions, ModalInterface } from "flowbite";
-
+import Editor from "react-simple-code-editor";
 type CurrentPage = {
   endOffset: number;
   current: ItemDefinition[];
   pageCount: number;
+};
+
+type Filter = {
+  noSeed?: boolean;
 };
 
 export default function ItemsRoute() {
@@ -22,53 +23,108 @@ export default function ItemsRoute() {
   const [currentPage, setCurrent] = useState<CurrentPage | null>(null);
   const [activePage, setActivePage] = useState<number>(0);
   const [modalInfo, setModalInfo] = useState<ItemDefinition | null>(null);
+  const [filter, setFilter] = useState<Filter>({
+    noSeed: true
+  });
 
   const btn = document.getElementById("decode") as HTMLButtonElement;
   const decodeDownload = document.getElementById("downloadDecode") as HTMLButtonElement;
   const inputSearch = document.getElementById("table-search") as HTMLInputElement;
 
-  const modalEl: HTMLElement | null = document.getElementById("showModal");
+  const modalEl = document.getElementById("showModal") as HTMLFormElement;
 
-  const modalOptions: ModalOptions = {
-    placement: "center",
-    backdrop: "static",
-    closable: true,
-    onHide: () => {
-      console.log("modal is hidden");
-    },
-    onShow: () => {
-      console.log("modal is shown");
-    },
-    onToggle: () => {
-      console.log("modal has been toggled");
+  const isValidJson = (str: string) => {
+    try {
+      JSON.parse(str);
+    } catch (e) {
+      return false;
+    }
+    return true;
+  };
+
+  const handlePageClick = (event: { selected: number }) => {
+    handleFilter(event.selected);
+    setActivePage(event.selected);
+  };
+
+  const handleInputFilter = (ev: MouseEvent<HTMLInputElement>) => {
+    switch (ev?.currentTarget.id) {
+      case "noSeed": {
+        setFilter({ noSeed: ev.currentTarget.checked });
+        break;
+      }
     }
   };
 
-  const modal: ModalInterface = new Modal(modalEl, modalOptions);
+  const handleFilter = (page: number) => {
+    let filterItems: ItemDefinition[];
 
-  const handlePageClick = (event: { selected: number }) => {
     // eslint-disable-next-line, @typescript-eslint/no-non-null-asserted-optional-chain
-    const searched = inputSearch.value
+    let searched = inputSearch.value
       ? fileJson?.items.filter((v) =>
           v.name?.toLowerCase().includes(inputSearch.value.toLowerCase())
         )
       : fileJson!.items;
 
-    const newOffset = (event.selected * itemsPerPage) % searched!.length;
-    console.log(`User requested page number ${event.selected}, which is offset ${newOffset}`);
+    const newOffset = (page * itemsPerPage) % searched!.length;
+    console.log(`User requested page number ${page}, which is offset ${newOffset}`);
 
     const endOffset = newOffset + itemsPerPage;
+
+    if (filter.noSeed) searched = searched?.filter((it) => it.id! % 2 === 0);
+
     const currentItems = searched!.slice(newOffset, endOffset);
+
     const pageCount = Math.ceil(searched!.length / itemsPerPage);
     console.log({ newOffset, endOffset });
     setCurrent({ endOffset, current: currentItems!, pageCount });
-    setActivePage(event.selected);
   };
+
+  const handleImage = () => {
+    const canva: NodeListOf<HTMLCanvasElement> | undefined =
+      document.querySelectorAll("#item_canvas");
+
+    canva?.forEach((e) => {
+      const ctx = e.getContext("2d");
+      const item = currentPage?.current.find(
+        (v) => v.id === parseInt(e.getAttribute("data-itemid")!)
+      );
+      const image = new Image();
+
+      const isSeed = (item?.id as number) % 2 === 1;
+      if (isSeed) image.src = `/game-image/game/seed.png`;
+      else image.src = `/game-image/game/${item?.texture?.replace(".rttex", ".png")}`;
+
+      image.addEventListener("load", () => {
+        if (isSeed) {
+          ctx?.drawImage(image, (item?.seedBase as number) * 16, 0, 16, 16, 0, 0, 64, 64);
+          ctx?.drawImage(image, (item?.seedOverlay as number) * 16, 16, 16, 16, 0, 0, 64, 64);
+        } else {
+          const textureX = (item?.textureX as number) * 32;
+          const textureY = (item?.textureY as number) * 32;
+
+          const cropPos = isSeed ? 16 : 32;
+          // console.log({ itemName: item?.name, isSeed, textureX, textureY, cropPos });
+          ctx?.drawImage(image, textureX, textureY, 32, 32, 0, 0, 64, 64);
+        }
+      });
+    });
+    console.log("aaa");
+  };
+
+  useEffect(() => {
+    handleImage();
+
+    return () => {
+      // a
+    };
+  }, [currentPage]);
 
   useEffect(() => {
     console.log("imported", file);
     if (file !== null) {
       const itemDat = new ItemsDat(file);
+      if (!itemDat.isFileValid()) alert("Please insert a valid items.dat file.");
       itemDat.decode().then((d) => {
         setFileJson(d);
       });
@@ -81,15 +137,21 @@ export default function ItemsRoute() {
   useEffect(() => {
     console.log("changed", fileJson);
     if (fileJson !== null) {
-      const endOffset = itemOffset + itemsPerPage;
-      const currentItems = fileJson?.items.slice(itemOffset, endOffset);
-      const pageCount = Math.ceil(fileJson.items.length / itemsPerPage);
-      setCurrent({ endOffset, current: currentItems, pageCount });
+      handleFilter(0);
     }
     return () => {
       // a
     };
   }, [fileJson]);
+
+  useEffect(() => {
+    if (fileJson !== null) {
+      handleFilter(0);
+    }
+    return () => {
+      // a
+    };
+  }, [filter]);
 
   const itemTool = () => {
     const input = document.getElementById("itemDat") as HTMLInputElement;
@@ -110,6 +172,7 @@ export default function ItemsRoute() {
     if (file) {
       btn.innerText = "Please wait...";
       const itemDat = new ItemsDat(file);
+
       const decoded = await itemDat.decode();
       // fileJsonString = JSON.stringify(decoded, null, 2);
 
@@ -134,109 +197,115 @@ export default function ItemsRoute() {
 
   return (
     <>
-      <div
-        id="showModal"
-        tabIndex={-1}
-        aria-hidden="true"
-        className="fixed top-0 left-0 right-0 z-50 hidden w-full p-4 overflow-x-hidden overflow-y-auto md:inset-0 h-[calc(100%-1rem)] max-h-full"
-      >
-        <div className="relative w-full max-w-2xl max-h-full">
-          {/* <!-- Modal content --> */}
-          <div className="relative bg-white rounded-lg shadow dark:bg-gray-700">
-            {/* <!-- Modal header --> */}
-            <div className="flex items-start justify-between p-4 border-b rounded-t dark:border-gray-600">
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
-                {modalInfo?.name}
-              </h3>
-              <button
-                type="button"
-                onClick={(ev) => {
-                  modal.hide();
-                  document.querySelector("body > div[modal-backdrop]")?.remove();
+      <Sidebar>
+        <dialog id="showModal" className="modal">
+          <div className="modal-box">
+            <h3 className="font-bold text-lg">{modalInfo?.name}</h3>
+            {/* <p className="py-4">Press ESC key or click the button below to close</p> */}
+            <div className="p-2 bg-base-300">
+              Not implemented yet
+              {/* <Editor
+                value={JSON.stringify(modalInfo || "", null, 2)}
+                onValueChange={(code) => {
+                  if (isValidJson(code)) setModalInfo(JSON.parse(code));
                 }}
-                className="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ml-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white"
-              >
-                <svg
-                  className="w-3 h-3"
-                  aria-hidden="true"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 14 14"
-                >
-                  <path
-                    stroke="currentColor"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"
-                  />
-                </svg>
-                <span className="sr-only">Close modal</span>
-              </button>
+                highlight={(code) => code}
+                style={{
+                  fontFamily: '"Fira code", "Fira Mono", monospace'
+                }}
+              /> */}
             </div>
-            {/* <!-- Modal body --> */}
-            <div className="p-6 space-y-6">
-              {Object.entries(modalInfo || {}).map(([key, value], i) => {
-                return (
-                  <div key={`modalInfo_${i}`}>
-                    <label
-                      htmlFor={`modal_${key}`}
-                      className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                    >{`${key}`}</label>
-                    <input
-                      type="text"
-                      id={`modal_${key}`}
-                      onChange={(ev) => {
-                        // e
-                      }}
-                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-800 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                      value={typeof value === "object" ? `${JSON.stringify(value)}` : `${value}`}
-                    />
-                  </div>
-                );
-              })}
-            </div>
-            {/* <!-- Modal footer --> */}
-            <div className="flex items-center p-6 space-x-2 border-t border-gray-200 rounded-b dark:border-gray-600">
-              <button
-                type="button"
-                onClick={(ev) => {
-                  modal.hide();
-                  document.querySelector("body > div[modal-backdrop]")?.remove();
-                }}
-                className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
-              >
-                Save
-              </button>
-              <button
-                type="button"
-                onClick={(ev) => {
-                  modal.hide();
-                  document.querySelector("body > div[modal-backdrop]")?.remove();
-                }}
-                className="text-gray-500 bg-white hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-blue-300 rounded-lg border border-gray-200 text-sm font-medium px-5 py-2.5 hover:text-gray-900 focus:z-10 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-500 dark:hover:text-white dark:hover:bg-gray-600 dark:focus:ring-gray-600"
-              >
-                Cancel
-              </button>
+            <div className="modal-action">
+              <form method="dialog">
+                {/* if there is a button in form, it will close the modal */}
+                <button className="btn">Close</button>
+              </form>
             </div>
           </div>
-        </div>
-      </div>
-
-      <Sidebar>
-        <h1 className="text-lg dark:text-white">items.dat tools</h1>
+        </dialog>
+        <h1 className="text-lg">items.dat tools</h1>
         {/* <input required type="file" id="itemDat" onChange={itemTool} accept=".dat" /> */}
 
         <div>
           <input
-            className="block w-64 mb-5 text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400"
             id="itemDat"
             type="file"
-            onChange={itemTool}
             accept=".dat"
-          ></input>
+            onChange={itemTool}
+            className="file-input file-input-bordered w-full max-w-xs"
+          />
         </div>
-        <div className="mt-4">
+
+        <input
+          id="table-search"
+          type="text"
+          placeholder="Search for items"
+          className="input input-bordered w-full max-w-xs my-2"
+          onKeyUp={(ev) => {
+            handlePageClick({ selected: 0 });
+          }}
+        />
+        <div className="dropdown lg:dropdown-right sm:dropdown-bottom lg:ml-2">
+          <div tabIndex={0} role="button" className="btn btn-primary m-1">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              fill="currentColor"
+              viewBox="0 0 16 16"
+            >
+              <path d="M6 10.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5m-2-3a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5m-2-3a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5" />
+            </svg>{" "}
+            Filter
+          </div>
+          <ul
+            tabIndex={0}
+            className="dropdown-content z-[1] menu p-2 shadow bg-base-300 rounded-box w-52"
+          >
+            <li>
+              <label className="label cursor-pointer">
+                <span className="label-text">No Seed</span>
+                <input
+                  type="checkbox"
+                  className="checkbox"
+                  id="noSeed"
+                  defaultChecked={filter.noSeed}
+                  onClick={handleInputFilter}
+                />
+              </label>
+            </li>
+          </ul>
+        </div>
+
+        <div className="mt-4 flex flex-wrap justify-center items-center gap-2">
+          {currentPage?.current.map((d) => {
+            return (
+              <div
+                className="btn block bg-base-200 p-2 shadow-md w-40 h-40"
+                key={d.id}
+                data-itemid={d.id}
+                onClick={(ev) => {
+                  const btn = ev.target as HTMLButtonElement;
+                  const id = btn.getAttribute("data-itemid") as string;
+                  const item = fileJson?.items.find((v) => v.id === parseInt(id)) as ItemDefinition;
+
+                  setModalInfo(item);
+                  modalEl.showModal();
+                }}
+              >
+                <h1 className="text-center pb-6">{d.name}</h1>
+                <canvas
+                  className="block m-auto"
+                  id="item_canvas"
+                  width={64}
+                  height={64}
+                  data-itemid={d.id}
+                ></canvas>
+              </div>
+            );
+          })}
+        </div>
+        <div className="flex flex-wrap items-center justify-center mt-4">
           <ReactPaginate
             breakLabel="..."
             nextLabel=">"
@@ -246,110 +315,13 @@ export default function ItemsRoute() {
             previousLabel="<"
             // renderOnZeroPageCount={null}
             forcePage={activePage}
-            containerClassName="flex"
-            breakLinkClassName="flex items-center justify-center px-4 h-10 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
-            nextLinkClassName="flex items-center justify-center px-4 h-10 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
-            previousLinkClassName="flex items-center justify-center px-4 h-10 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
-            pageLinkClassName="flex items-center justify-center px-4 h-10 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
-            activeLinkClassName="!text-blue-600 !border-blue-300 !bg-blue-50 !hover:bg-blue-100 !hover:text-blue-700"
+            containerClassName="join"
+            breakLinkClassName="join-item btn"
+            nextLinkClassName="join-item btn"
+            previousLinkClassName="join-item btn"
+            pageLinkClassName="join-item btn"
+            activeLinkClassName="join-item btn btn-active"
           />
-          <div className="mt-2">
-            <div className="flex items-center pb-4">
-              <label htmlFor="table-search" className="sr-only">
-                Search
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                  <svg
-                    className="w-5 h-5 text-gray-500 dark:text-gray-400"
-                    aria-hidden="true"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
-                      clipRule="evenodd"
-                    ></path>
-                  </svg>
-                </div>
-                <input
-                  type="text"
-                  id="table-search"
-                  className="block p-2 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg w-80 bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                  placeholder="Search for items"
-                  onKeyPress={(ev) => {
-                    if (ev.key === "Enter") handlePageClick({ selected: 0 });
-                  }}
-                ></input>
-              </div>
-              <button
-                type="button"
-                onClick={() => handlePageClick({ selected: 0 })}
-                className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm p-2 ml-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800"
-              >
-                Search
-              </button>
-            </div>
-            {/* <Items data={currentPage?.current || []} /> */}
-            <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
-              <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-                <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
-                  <tr>
-                    <th scope="col" className="px-6 py-3">
-                      ID
-                    </th>
-                    <th scope="col" className="px-6 py-3">
-                      Name
-                    </th>
-                    <th scope="col" className="px-6 py-3">
-                      Action
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {currentPage?.current.map((d) => {
-                    return (
-                      <tr
-                        key={d.id}
-                        className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
-                      >
-                        <th
-                          scope="row"
-                          className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white"
-                        >
-                          {d.id}
-                        </th>
-                        <td className="px-6 py-4">{d.name}</td>
-                        <td className="px-6 py-4">
-                          <button
-                            type="button"
-                            dataid={d.id}
-                            onClick={(ev) => {
-                              const btn = ev.target as HTMLButtonElement;
-                              const id = btn.getAttribute("dataid") as string;
-                              const item = fileJson?.items.find(
-                                (v) => v.id === parseInt(id)
-                              ) as ItemDefinition;
-
-                              setModalInfo(item);
-                              console.log(item);
-
-                              modal.show();
-                            }}
-                            className="font-medium text-blue-600 dark:text-blue-500 hover:underline"
-                          >
-                            Edit
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
         </div>
       </Sidebar>
     </>

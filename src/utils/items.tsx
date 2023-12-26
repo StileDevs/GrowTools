@@ -52,6 +52,14 @@ class ItemsDat {
     return size;
   }
 
+  public isFileValid() {
+    const version = this.data.getUint16(0, true);
+    // const itemCount = this.data.getUint32(2, true);
+
+    if (version >= 11 && version <= 15) return true;
+    else return false;
+  }
+
   /**
    * Reads a string from the items.dat file whether it be XOR encrypted or not.
    * @param opts Options for reading the string.
