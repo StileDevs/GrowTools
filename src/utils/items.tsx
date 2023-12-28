@@ -36,7 +36,7 @@ class ItemsDat {
    * Get total byte size for writing.
    */
   public getWriteSize(items: ItemDefinition[]) {
-    let size = 194 * items.length;
+    let size = 196 * items.length;
     // get sizes for the string
     for (const item of items) {
       const keys = Object.keys(item);
@@ -276,6 +276,10 @@ class ItemsDat {
             this.mempos += 25;
             await this.writeString(item.extraTexture || "", item.id!);
           }
+
+          if (meta.version! >= 16) {
+            await this.writeString(item.itemRenderer || "", item.id!);
+          }
         }
       }
 
@@ -406,6 +410,10 @@ class ItemsDat {
           if (meta.version >= 15) {
             this.mempos += 25;
             item.extraTexture = await this.readString({ id: item.id });
+          }
+
+          if (meta.version >= 16) {
+            item.itemRenderer = await this.readString({ id: item.id });
           }
         }
 

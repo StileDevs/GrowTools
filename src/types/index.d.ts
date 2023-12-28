@@ -73,6 +73,7 @@ export interface ItemDefinition {
   bodyPart?: number[] | ArrayBuffer;
   flags5?: number;
   extraTexture?: string;
+  itemRenderer?: string;
 }
 
 export interface ItemsDatMeta {
