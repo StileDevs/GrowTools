@@ -22,7 +22,7 @@ export class RTTEX {
   public type: string | undefined;
 
   constructor(image: DataView) {
-    if (!ArrayBuffer.isView(image.buffer)) throw new Error("Please use buffer instead.");
+    if (!ArrayBuffer.isView(image)) throw new Error("Please use buffer instead.");
     const type = new TextDecoder("utf-8").decode(image.buffer.slice(0, 6));
     if (type === "RTPACK" || type === "RTTXTR") {
       // e
@@ -103,7 +103,7 @@ export class RTTEX {
   public static async decode(rttexImg: DataView) {
     let data = rttexImg;
 
-    if (!ArrayBuffer.isView(data.buffer)) throw new Error("Please use buffer instead.");
+    if (!ArrayBuffer.isView(data)) throw new Error("Please use buffer instead.");
 
     let type = new TextDecoder("utf-8").decode(data.buffer.slice(0, 6));
 
@@ -122,7 +122,7 @@ export class RTTEX {
   }
 
   public static async encode(img: DataView) {
-    if (!ArrayBuffer.isView(img.buffer)) throw new Error("Please use buffer instead.");
+    if (!ArrayBuffer.isView(img)) throw new Error("Please use buffer instead.");
 
     const type = new TextDecoder("utf-8").decode(img.buffer.slice(0, 6));
 
