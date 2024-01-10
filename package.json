@@ -11,7 +11,7 @@
   "dependencies": {
     "autoprefixer": "^10.4.16",
     "daisyui": "^4.4.24",
-    "imagescript": "^1.2.18",
+    "imagescript": "matmen/Imagescript#browser",
     "pako": "^2.1.0",
     "postcss": "^8.4.31",
     "react": "^18.2.0",

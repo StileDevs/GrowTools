@@ -1,5 +1,5 @@
 import pako from "pako";
-import ImageV2 from "imagescript/v2/framebuffer";
+import { Image } from "imagescript";
 import { RTPACK, RTTXTR } from "../types";
 
 function u8ToDataview(u8: Uint8Array) {
@@ -15,6 +15,29 @@ function getLowestPowerOf2(n: number) {
   let lowest = 1;
   while (lowest < n) lowest <<= 1;
   return lowest;
+}
+
+function flipVertically(width: number, height: number, bitmap: Uint8ClampedArray) {
+  if (!width || !height) {
+    throw new Error("Invalid image data");
+  }
+
+  const pixels = new Uint8ClampedArray(bitmap.buffer);
+
+  const bytesPerRow = width * 4;
+
+  for (let row = 0; row < height / 2; row++) {
+    const topRowIndex = row * bytesPerRow;
+    const bottomRowIndex = (height - row - 1) * bytesPerRow;
+
+    for (let col = 0; col < bytesPerRow; col++) {
+      const temp = pixels[topRowIndex + col];
+      pixels[topRowIndex + col] = pixels[bottomRowIndex + col];
+      pixels[bottomRowIndex + col] = temp;
+    }
+  }
+
+  return pixels;
 }
 
 export class RTTEX {
@@ -94,7 +117,7 @@ export class RTTEX {
     return data;
   }
 
-  public static async hash(buf: Buffer): Promise<number> {
+  public static async hash(buf: Uint8Array): Promise<number> {
     let hash = 0x55555555;
     buf.forEach((x) => (hash = (hash >>> 27) + (hash << 5) + x));
     return hash >>> 0;
@@ -113,11 +136,11 @@ export class RTTEX {
     }
 
     if (type === "RTTXTR") {
-      return u8ToDataview(
-        new ImageV2(data.getUint16(12, true), data.getUint16(8, true), data.buffer.slice(124))
-          .flip("vertical")
-          .encode("png")
-      );
+      const image = new Image(data.getUint16(12, true), data.getUint16(8, true));
+      image.bitmap = new Uint8ClampedArray(data.buffer.slice(124));
+      image.bitmap = flipVertically(image.width, image.height, image.bitmap);
+
+      return u8ToDataview(await image.encode());
     } else throw new Error("Invalid format type.");
   }
 
@@ -129,8 +152,8 @@ export class RTTEX {
     if (type === "RTPACK" || type === "RTTXTR")
       throw new TypeError("Invalid format, must be a PNG");
 
-    const data = ImageV2.decode("png", img).flip("vertical");
-
+    const data = await Image.decode(new Uint8Array(img.buffer));
+    data.bitmap = flipVertically(data.width, data.height, new Uint8ClampedArray(data.bitmap));
     // const rttex = Buffer.alloc(124);
     const rttex = new DataView(new ArrayBuffer(124));
     let pos = 8;
@@ -138,7 +161,7 @@ export class RTTEX {
     // write header string
     const rttxtr = new Uint8Array(6);
     rttxtr.set(new TextEncoder().encode("RTTXTR"), 0);
-    rttxtr.forEach((v, i) => rttex.setUint8(v, i));
+    rttxtr.forEach((v, i) => rttex.setUint8(i, v));
 
     rttex.setUint8(6, 0); // version
     rttex.setUint8(7, 0); // reserved
@@ -176,11 +199,11 @@ export class RTTEX {
     pos += 4;
     rttex.setInt32(pos, data.width, true); // mipmapWidth
     pos += 4;
-    rttex.setInt32(pos, data.u8.length, true); // bufferLength
+    rttex.setInt32(pos, data.bitmap.length, true); // bufferLength
 
-    const concat = new Uint8Array(rttex.buffer.byteLength + data.u8.byteLength);
+    const concat = new Uint8Array(rttex.buffer.byteLength + data.bitmap.byteLength);
     concat.set(new Uint8Array(rttex.buffer), 0);
-    concat.set(data.u8, rttex.buffer.byteLength);
+    concat.set(data.bitmap, rttex.buffer.byteLength);
 
     const compressed = pako.deflate(concat);
 
@@ -189,14 +212,14 @@ export class RTTEX {
 
     const rtpackHeader = new Uint8Array(6);
     rtpackHeader.set(new TextEncoder().encode("RTPACK"), 0);
-    rtpackHeader.forEach((v, i) => rtpack.setUint8(v, i));
+    rtpackHeader.forEach((v, i) => rtpack.setUint8(i, v));
 
     rtpack.setUint8(6, 1); // version
     rtpack.setUint8(7, 1); // reserved
 
     rtpack.setUint32(pos, compressed.length, true); // compressedSize
     pos += 4;
-    rtpack.setUint32(pos, 124 + data.u8.length, true); // decompressedSize
+    rtpack.setUint32(pos, 124 + data.bitmap.length, true); // decompressedSize
     pos += 4;
 
     rtpack.setUint8(pos, 1); // compressionType
@@ -209,9 +232,10 @@ export class RTTEX {
     }
 
     const result = new Uint8Array(rtpack.buffer.byteLength + compressed.byteLength);
-    result.set(new Uint8Array(rtpack.buffer), 0);
+    const rtbuf = new Uint8Array(rtpack.buffer);
+    result.set(rtbuf, 0);
     result.set(compressed, rtpack.buffer.byteLength);
 
-    return result;
+    return u8ToDataview(result);
   }
 }
