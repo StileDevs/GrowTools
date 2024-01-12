@@ -4,6 +4,7 @@ import Main from "./routes/Main";
 import ItemsRoute from "./routes/ItemsRoute";
 import RttexToPngRoute from "./routes/RttexToPngRoute";
 import Sidebar from "./components/Sidebar";
+import PngToRttexRoute from "./routes/PngToRttexRoute";
 
 function App() {
   return (
@@ -12,6 +13,7 @@ function App() {
         <Route path="/" element={<Main />} />
         <Route path="/itemsdat" element={<ItemsRoute />} />
         <Route path="/rttex-to-png" element={<RttexToPngRoute />} />
+        <Route path="/png-to-rttex" element={<PngToRttexRoute />} />
         <Route
           path="*"
           element={

@@ -9,6 +9,7 @@ interface FileType {
   arrayBuffer?: ArrayBuffer;
   file?: DataView;
   fileUrl?: string;
+  hash?: number;
 }
 
 interface FileCounter {
@@ -16,13 +17,13 @@ interface FileCounter {
   current: number;
 }
 
-export default function RttexToPngRoute() {
+export default function PngToRttexRoute() {
   const [files, setFiles] = useState<FileType[]>([]);
   const [modalInfo, setModalInfo] = useState<FileType | null>(null);
   const modalEl = document.getElementById("showModal") as HTMLFormElement;
 
   const rttexHandle = () => {
-    const input = document.getElementById("rttexFileUpload") as HTMLInputElement;
+    const input = document.getElementById("pngFileUpload") as HTMLInputElement;
 
     const fileInput = input.files!;
 
@@ -36,9 +37,11 @@ export default function RttexToPngRoute() {
       const reader = new FileReader();
       reader.addEventListener("load", async (f) => {
         temp.arrayBuffer = f.target?.result as ArrayBuffer;
-        const file = await RTTEX.decode(new DataView(f.target?.result as ArrayBuffer));
+        const file = await RTTEX.encode(new DataView(f.target?.result as ArrayBuffer));
         temp.file = file;
-        temp.fileUrl = URL.createObjectURL(new Blob([file.buffer!], { type: "image/png" }));
+        temp.fileUrl = URL.createObjectURL(new Blob([file.buffer!]));
+
+        temp.hash = await RTTEX.hash(new Uint8Array(file.buffer));
 
         setFiles((e) => [...e, temp]);
         reader.abort();
@@ -74,7 +77,7 @@ export default function RttexToPngRoute() {
               <a
                 className="btn btn-primary mr-2"
                 href={modalInfo?.fileUrl}
-                download={modalInfo?.name?.replace(".rttex", ".png")}
+                download={modalInfo?.name?.replace(".png", ".rttex")}
               >
                 Download
               </a>
@@ -88,13 +91,13 @@ export default function RttexToPngRoute() {
           </div>
         </dialog>
 
-        <h1 className="mb-4">RTTEX TO PNG</h1>
+        <h1 className="mb-4">PNG TO RTTEX</h1>
 
         <div>
           <input
-            id="rttexFileUpload"
+            id="pngFileUpload"
             type="file"
-            accept=".rttex"
+            accept=".png"
             onChange={() => {
               rttexHandle();
             }}
@@ -112,6 +115,7 @@ export default function RttexToPngRoute() {
                     <th>No</th>
                     <th>Name</th>
                     <th>Size</th>
+                    <th>Hash</th>
                     <th>Action</th>
                   </tr>
                 </thead>
@@ -122,6 +126,7 @@ export default function RttexToPngRoute() {
                         <th>{i + 1}</th>
                         <td>{v.name}</td>
                         <td>{byteConverter(v.size!, 2, "")}</td>
+                        <td>{v.hash}</td>
                         <td>
                           <button
                             className="btn btn-primary"
