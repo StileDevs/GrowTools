@@ -56,7 +56,7 @@ class ItemsDat {
     const version = this.data.getUint16(0, true);
     // const itemCount = this.data.getUint32(2, true);
 
-    if (version >= 11 && version <= 15) return true;
+    if (version >= 11 && version <= 16) return true;
     else return false;
   }
 
