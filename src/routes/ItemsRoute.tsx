@@ -3,7 +3,8 @@ import ItemsDat from "../utils/items";
 import Sidebar from "../components/Sidebar";
 import { ItemDefinition, ItemsDatMeta } from "../types";
 import ReactPaginate from "react-paginate";
-import Editor from "react-simple-code-editor";
+import { byteConverter } from "../utils/Utils";
+
 type CurrentPage = {
   endOffset: number;
   current: ItemDefinition[];
@@ -23,6 +24,7 @@ export default function ItemsRoute() {
   const [currentPage, setCurrent] = useState<CurrentPage | null>(null);
   const [activePage, setActivePage] = useState<number>(0);
   const [modalInfo, setModalInfo] = useState<ItemDefinition | null>(null);
+  const [tempModalInfo, setTempModalInfo] = useState<string | null>(null);
   const [filter, setFilter] = useState<Filter>({
     noSeed: true
   });
@@ -30,7 +32,6 @@ export default function ItemsRoute() {
   const btn = document.getElementById("decode") as HTMLButtonElement;
   const decodeDownload = document.getElementById("downloadDecode") as HTMLButtonElement;
   const inputSearch = document.getElementById("table-search") as HTMLInputElement;
-
   const modalEl = document.getElementById("showModal") as HTMLFormElement;
 
   const isValidJson = (str: string) => {
@@ -202,8 +203,20 @@ export default function ItemsRoute() {
           <div className="modal-box">
             <h3 className="font-bold text-lg">{modalInfo?.name}</h3>
             {/* <p className="py-4">Press ESC key or click the button below to close</p> */}
-            <div className="p-2 bg-base-300">
-              Not implemented yet
+            <div className="p-2">
+              <textarea
+                id="codeJson"
+                className="textarea textarea-bordered textarea-lg w-full max-w-xl h-64 bg-base-300 text-base"
+                value={tempModalInfo || ""}
+                onChange={(e) => {
+                  // console.log(e.target.value, isValidJson(e.target.value));
+                  // if (isValidJson(e.target.value)) setModalInfo(JSON.parse(e.target.value));
+                  // setModalInfo(JSON.parse(e.target.value));
+
+                  setTempModalInfo(e.target.value);
+                }}
+              ></textarea>
+
               {/* <Editor
                 value={JSON.stringify(modalInfo || "", null, 2)}
                 onValueChange={(code) => {
@@ -218,7 +231,45 @@ export default function ItemsRoute() {
             <div className="modal-action">
               <form method="dialog">
                 {/* if there is a button in form, it will close the modal */}
-                <button className="btn">Close</button>
+                <div
+                  className="btn btn-primary"
+                  onClick={() => {
+                    const sendAlert = (message: string, type = "info", delayMS = 2000) => {
+                      if (document.getElementById("toast-alert")) return;
+
+                      const root = document.getElementById("showModal");
+                      const toast = document.createElement("div");
+                      const alert = document.createElement("div");
+
+                      toast.id = "toast-alert";
+                      toast.classList.add("toast", "toast-center");
+                      alert.classList.add("alert", `alert-${type}`);
+                      alert.textContent = message;
+
+                      toast?.appendChild(alert);
+                      root?.appendChild(toast);
+                      setTimeout(() => {
+                        root?.removeChild(toast);
+                      }, delayMS);
+                    };
+                    if (isValidJson(tempModalInfo || "")) {
+                      const index = fileJson?.items.findIndex((v) => v.id === modalInfo?.id);
+
+                      if (index) {
+                        fileJson!.items[index] = JSON.parse(tempModalInfo || "");
+                        setFileJson({ ...fileJson!, items: fileJson!.items });
+                        sendAlert("Sucessfully saved", "success");
+                      } else sendAlert("Failed to save", "error");
+                    } else {
+                      sendAlert("Please validate the JSON syntax", "error");
+                    }
+                  }}
+                >
+                  Save
+                </div>
+                <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
+                  ✕
+                </button>
               </form>
             </div>
           </div>
@@ -290,6 +341,7 @@ export default function ItemsRoute() {
                   const item = fileJson?.items.find((v) => v.id === parseInt(id)) as ItemDefinition;
 
                   setModalInfo(item);
+                  setTempModalInfo(JSON.stringify(item, null, 2));
                   modalEl.showModal();
                 }}
               >
@@ -305,6 +357,40 @@ export default function ItemsRoute() {
             );
           })}
         </div>
+
+        {fileJson?.items.length ? (
+          <>
+            <div className="join join-vertical lg:join-horizontal">
+              <button
+                className="btn btn-primary join-item"
+                onClick={async () => {
+                  const encoded = await new ItemsDat().encode(fileJson!);
+                  // const meta = await new ItemsDat(encoded).decode();
+                  // console.log({ meta });
+
+                  const data = URL.createObjectURL(
+                    new Blob([new Uint8Array(encoded)], { type: "application/octet-stream" })
+                  );
+                  const btn = document.getElementById("downloadItemsdat") as HTMLButtonElement;
+
+                  btn.disabled = false;
+                  btn.innerText = `Download ${byteConverter(
+                    encoded.byteLength,
+                    2,
+                    ""
+                  )} (EXPERTIMENT)`;
+                  btn.setAttribute("href", data);
+                  btn.setAttribute("download", "items.dat");
+                }}
+              >
+                Encode
+              </button>
+              <button id="downloadItemsdat" className="btn btn-success join-item" disabled={true}>
+                Download (EXPERTIMENT)
+              </button>
+            </div>
+          </>
+        ) : null}
         <div className="flex flex-wrap items-center justify-center mt-4">
           <ReactPaginate
             breakLabel="..."

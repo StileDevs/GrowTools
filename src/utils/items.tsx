@@ -28,8 +28,8 @@ class ItemsDat {
 
   private data: DataView;
 
-  constructor(chunk: ArrayBuffer) {
-    this.data = new DataView(chunk);
+  constructor(chunk?: ArrayBuffer) {
+    this.data = new DataView(chunk || new ArrayBuffer(0));
   }
 
   /**
@@ -58,6 +58,13 @@ class ItemsDat {
 
     if (version >= 11 && version <= 16) return true;
     else return false;
+  }
+
+  public get hash() {
+    let hash = 0x55555555;
+    for (let i = 0; i < this.data.byteLength; i++)
+      hash = (hash >>> 27) + (hash << 5) + (this.data.buffer as Uint8Array)[i];
+    return hash >>> 0;
   }
 
   /**
@@ -134,15 +141,13 @@ class ItemsDat {
   /**
    * Creates a new items.dat file.
    * @param meta The item data to use.
-   * @return {Promise<ArrayBuffer>}
    */
-  public encode(meta: ItemsDatMeta) {
+  public encode(meta: ItemsDatMeta): Promise<ArrayBuffer> {
     // eslint-disable-next-line no-async-promise-executor
     return new Promise(async (resolve) => {
       if (this.mempos !== 0) this.mempos = 0; // this must be 0
 
       const size = this.getWriteSize(meta.items);
-      console.log(size);
       this.data = new DataView(new ArrayBuffer(size)); // create new data
 
       this.data.setUint16(this.mempos, meta.version!, true);
@@ -151,8 +156,10 @@ class ItemsDat {
       this.data.setUint32(this.mempos, meta.items.length, true);
       this.mempos += 4;
 
+      // TODO: (experiment) fix encode serialization memory position not right.
       for (const item of meta.items) {
         this.data.setInt32(this.mempos, item.id!, true);
+        console.log("writeee", { mempos: this.data.getInt32(this.mempos, true) });
         this.mempos += 4;
 
         this.data.setUint8(this.mempos++, item.flags!);
@@ -232,18 +239,27 @@ class ItemsDat {
         const extraBytesObj = item.extraBytes;
 
         if (typeof extraBytesObj === "object" && Array.isArray(extraBytesObj)) {
-          console.log(extraBytesObj);
-          item.extraBytes = new TextEncoder().encode(extraBytesObj as never);
+          // item.extraBytes = new TextEncoder().encode(extraBytesObj as never);
         }
 
+        if (item.id === 0)
+          console.log("writeaaaa", {
+            id: item.id,
+            name: item.name,
+            mempos: this.mempos,
+            ext: item.extraBytes,
+            extObj: extraBytesObj
+          });
         // if (Buffer.isBuffer(item.extraBytes))
-        if (item.extraBytes instanceof ArrayBuffer) {
+        if (item.extraBytes instanceof Uint8Array) {
           const t = new Uint8Array(item.extraBytes);
           // for (const byte of item.extraBytes) this.data.setUint8(this.mempos++, byte);
           for (let i = 0; i < item.extraBytes.byteLength; i++) {
             this.data.setUint8(this.mempos++, t[i]);
           }
         }
+        if (item.id === 0)
+          console.log("writeaaaa", { id: item.id, name: item.name, mempos: this.mempos });
 
         if (meta.version! >= 11) {
           await this.writeString(item.punchOptions || "", item.id!);
@@ -254,10 +270,18 @@ class ItemsDat {
 
             const bodyPartObj = item.bodyPart;
 
-            if (typeof bodyPartObj === "object" && Array.isArray(bodyPartObj))
-              item.bodyPart = new TextEncoder().encode(bodyPartObj as never);
+            // if (typeof bodyPartObj === "object" && Array.isArray(bodyPartObj))
+            //   item.bodyPart = new TextEncoder().encode(bodyPartObj as never);
 
-            if (item.bodyPart instanceof ArrayBuffer) {
+            if (item.id === 0)
+              console.log("writeaaaa", {
+                id: item.id,
+                name: item.name,
+                mempos: this.mempos,
+                extbody: item.bodyPart,
+                extObj: bodyPartObj
+              });
+            if (item.bodyPart instanceof Uint8Array) {
               const t = new Uint8Array(item.bodyPart);
               for (let i = 0; i < item.bodyPart.byteLength; i++) {
                 this.data.setUint8(this.mempos++, t[i]);
@@ -281,6 +305,7 @@ class ItemsDat {
             await this.writeString(item.itemRenderer || "", item.id!);
           }
         }
+        if (item.id === 0) console.log({ mempos: this.mempos });
       }
 
       this.mempos = 0; // reset again
@@ -299,15 +324,20 @@ class ItemsDat {
       } as ItemsDatMeta;
 
       meta.version = this.data.getUint16(this.mempos, true);
+      // console.log("read", meta);
+
       this.mempos += 2;
 
       meta.itemCount = this.data.getUint32(this.mempos, true);
+      // console.log("read", meta);
       this.mempos += 4;
 
       for (let i = 0; i < meta.itemCount; i++) {
         const item = {} as ItemDefinition;
 
         item.id = this.data.getInt32(this.mempos, true);
+        // console.log("read", { id: item.id });
+
         this.mempos += 4;
 
         item.flags = this.data.getUint8(this.mempos++);
@@ -415,6 +445,7 @@ class ItemsDat {
           if (meta.version >= 16) {
             item.itemRenderer = await this.readString({ id: item.id });
           }
+          if (item.id === 0) console.log("read", { mempos: this.mempos });
         }
 
         meta.items.push(item);

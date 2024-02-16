@@ -64,13 +64,13 @@ export interface ItemDefinition {
   extraOptions2?: string;
   punchOptions?: string;
 
-  extraBytes?: number[] | ArrayBuffer;
+  extraBytes?: number[] | Uint8Array;
 
   // new options
   ingredient?: number;
   flags3?: number;
   flags4?: number;
-  bodyPart?: number[] | ArrayBuffer;
+  bodyPart?: number[] | Uint8Array;
   flags5?: number;
   extraTexture?: string;
   itemRenderer?: string;
@@ -81,6 +81,8 @@ export interface ItemsDatMeta {
   itemCount?: number;
 
   items: ItemDefinition[];
+
+  hash?: number;
 }
 
 export interface MipMap {
