@@ -175,18 +175,18 @@ export default function ItemsDat() {
           Upload file
           <HiddenInput type="file" id="ItemsDatFile" accept=".dat" onChange={itemTool} />
         </Button>
-        {fileJson ? undefined : uploadProgress < 100 ? undefined : (
+        {fileJson ? undefined : uploadProgress < 100 ? (
           <>
-            {uploadProgress === 100 ? (
-              <>
-                Processing data <CircularProgress size={20} />
-              </>
-            ) : (
+            {uploadProgress !== 0 && (
               <>
                 Uploading
-                <ProgressWithLabel value={uploadProgress} size={20} />
+                <ProgressWithLabel value={uploadProgress} size={32} />
               </>
             )}
+          </>
+        ) : (
+          <>
+            Processing data <CircularProgress size={32} />
           </>
         )}
       </Box>
