@@ -1,8 +1,12 @@
 <script setup lang="ts">
 import MainContainer from "@/components/MainContainer.vue";
 import NotFoundView from "@/views/NotFoundView.vue";
+import RenderItemImage from "@/components/RenderItemImage.vue";
+import Button from "primevue/button";
+import InputText from "primevue/inputtext";
+import InputNumber from "primevue/inputnumber";
 import { useItemsDatStore } from "@/stores/itemsdat";
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { useRoute } from "vue-router";
 
 const $route = useRoute();
@@ -11,11 +15,186 @@ const itemsdat = useItemsDatStore();
 const item = computed(() =>
   itemsdat.data.items.find((i) => i.id === parseInt($route.params.id as string)),
 );
-</script>
 
+const editMode = ref(false);
+const editedItem = ref({ ...item.value });
+
+const toggleEditMode = () => {
+  editMode.value = !editMode.value;
+  if (editMode.value) {
+    editedItem.value = { ...item.value };
+  }
+};
+
+const saveChanges = () => {
+  // TODO: Implement save logic
+  itemsdat.updateItem(editedItem.value);
+  editMode.value = false;
+};
+</script>
 <template>
   <NotFoundView v-if="!item" />
   <Transition name="item-gt" mode="out-in" v-else>
-    <MainContainer>{{ item.name }}</MainContainer>
+    <MainContainer>
+      <div class="flex justify-between items-center mb-4">
+        <div class="flex gap-4 items-center">
+          <RenderItemImage :item="item" width="64" height="64" />
+          <div>
+            <h1 class="font-bold text-xl">
+              <template v-if="!editMode">{{ item.name }}</template>
+              <InputText type="text" v-else v-model="editedItem.name" />
+            </h1>
+          </div>
+        </div>
+
+        <div class="flex gap-2 items-center">
+          <div v-if="editMode" class="flex justify-end">
+            <Button @click="saveChanges" severity="success" label="Save Changes"></Button>
+          </div>
+          <Button
+            @click="toggleEditMode"
+            :label="editMode ? 'Cancel' : 'Edit'"
+            :severity="editMode ? 'danger' : ''"
+          >
+          </Button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <section class="border rounded p-4">
+          <h3 class="font-bold mb-2">Basic Information</h3>
+          <div class="grid grid-cols-2 gap-2">
+            <template
+              v-for="(value, key) in {
+                id: item.id,
+                type: item.type,
+                materialType: item.materialType,
+                rarity: item.rarity,
+                maxAmount: item.maxAmount,
+                breakHits: item.breakHits,
+                growTime: item.growTime,
+              }"
+              :key="key"
+            >
+              <div class="font-semibold">{{ key }}:</div>
+              <div v-if="!editMode">{{ value }}</div>
+              <InputNumber v-else v-model="editedItem[key]" type="number" />
+            </template>
+          </div>
+        </section>
+
+        <section class="border rounded p-4">
+          <h3 class="font-bold mb-2">Flags</h3>
+          <div class="grid grid-cols-2 gap-2">
+            <template
+              v-for="(value, key) in {
+                flags: item.flags,
+                flagsCategory: item.flagsCategory,
+                flags2: item.flags2,
+                flags3: item.flags3,
+                flags4: item.flags4,
+                flags5: item.flags5,
+                extraFlags1: item.extraFlags1,
+              }"
+              :key="key"
+            >
+              <div class="font-semibold">{{ key }}:</div>
+              <div v-if="!editMode">{{ value }}</div>
+              <InputNumber v-else v-model="editedItem[key]" type="number" />
+            </template>
+          </div>
+        </section>
+
+        <section class="border rounded p-4">
+          <h3 class="font-bold mb-2">Texture Properties</h3>
+          <div class="grid grid-cols-2 gap-2">
+            <template
+              v-for="(value, key) in {
+                texture: item.texture,
+                textureHash: item.textureHash,
+                texture2: item.texture2,
+                textureX: item.textureX,
+                textureY: item.textureY,
+                extraTexture: item.extraTexture,
+              }"
+              :key="key"
+            >
+              <div class="font-semibold">{{ key }}:</div>
+              <div v-if="!editMode">{{ value }}</div>
+              <InputText
+                v-else
+                v-model="editedItem[key] as number | string"
+                :type="typeof value === 'number' ? 'number' : 'text'"
+              />
+            </template>
+          </div>
+        </section>
+
+        <section class="border rounded p-4">
+          <h3 class="font-bold mb-2">Pet Properties</h3>
+          <div class="grid grid-cols-2 gap-2">
+            <template
+              v-for="(value, key) in {
+                petName: item.petName,
+                petPrefix: item.petPrefix,
+                petSuffix: item.petSuffix,
+                petAbility: item.petAbility,
+              }"
+              :key="key"
+            >
+              <div class="font-semibold">{{ key }}:</div>
+              <div v-if="!editMode">{{ value }}</div>
+              <InputNumber v-else v-model="editedItem[key]" />
+            </template>
+          </div>
+        </section>
+
+        <section class="border rounded p-4">
+          <h3 class="font-bold mb-2">Tree/Seed Properties</h3>
+          <div class="grid grid-cols-2 gap-2">
+            <template
+              v-for="(value, key) in {
+                seedBase: item.seedBase,
+                seedOverlay: item.seedOverlay,
+                treeBase: item.treeBase,
+                treeLeaves: item.treeLeaves,
+                seedColor: item.seedColor,
+                seedOverlayColor: item.seedOverlayColor,
+              }"
+              :key="key"
+            >
+              <div class="font-semibold">{{ key }}:</div>
+              <div v-if="!editMode">{{ value }}</div>
+              <InputText v-else v-model="editedItem[key]" type="text" />
+            </template>
+          </div>
+        </section>
+
+        <section class="border rounded p-4">
+          <h3 class="font-bold mb-2">Additional Properties</h3>
+          <div class="grid grid-cols-2 gap-2">
+            <template
+              v-for="(value, key) in {
+                extraFile: item.extraFile,
+                extraFileHash: item.extraFileHash,
+                extraOptions: item.extraOptions,
+                extraOptions2: item.extraOptions2,
+                punchOptions: item.punchOptions,
+                itemRenderer: item.itemRenderer,
+                extraByte: item.extraBytes,
+                bodyPart: item.bodyPart,
+                unknownBytes1: item.unknownBytes1,
+                unknownBytes2: item.unknownBytes2,
+              }"
+              :key="key"
+            >
+              <div class="font-semibold">{{ key }}:</div>
+              <div v-if="!editMode">{{ value }}</div>
+              <InputText v-else v-model="editedItem[key]" :type="'text'" />
+            </template>
+          </div>
+        </section>
+      </div>
+    </MainContainer>
   </Transition>
 </template>

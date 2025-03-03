@@ -1,29 +1,11 @@
 <script setup lang="ts">
+import RenderItemImage from "@/components/RenderItemImage.vue";
 import type { ItemDefinition } from "@/types";
-import { ref, onMounted } from "vue";
 import { RouterLink } from "vue-router";
 
 const props = defineProps<{
   item: ItemDefinition;
 }>();
-
-const cv = ref<HTMLCanvasElement | null>(null);
-
-onMounted(() => {
-  if (cv.value) {
-    const ctx = cv.value.getContext("2d")!;
-    const image = new Image();
-
-    image.src = `/game-image/game/${props.item.texture?.replace(".rttex", ".png")}`;
-
-    image.addEventListener("load", () => {
-      const textureX = (props.item.textureX as number) * 32;
-      const textureY = (props.item.textureY as number) * 32;
-
-      ctx?.drawImage(image, textureX, textureY, 32, 32, 0, 0, 64, 64);
-    });
-  }
-});
 </script>
 <template>
   <Transition name="item-gt" mode="out-in">
@@ -32,7 +14,7 @@ onMounted(() => {
       :to="`/items-dat/${item.id}`"
     >
       <main>
-        <canvas ref="cv" width="64" height="64" class="m-auto"></canvas>
+        <RenderItemImage :item="item" width="64" height="64" class="m-auto" />
       </main>
 
       <div class="mt-4">

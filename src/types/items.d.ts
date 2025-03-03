@@ -47,21 +47,21 @@ export interface ItemDefinition {
   extraOptions2?: string;
   punchOptions?: string;
 
-  extraBytes?: Buffer;
+  extraBytes?: number[];
 
   // new options
   ingredient?: number;
   flags3?: number;
   flags4?: number;
-  bodyPart?: Buffer;
+  bodyPart?: number[];
   flags5?: number;
   extraTexture?: string;
   itemRenderer?: string;
   unknownInt1?: number; // NOTE: not sure what this does
-  unknownBytes1?: Buffer; // NOTE: not sure what this does
+  unknownBytes1?: number[]; // NOTE: not sure what this does
   extraFlags1?: number; // NOTE: not sure what this does
   extraHash1?: number; // NOTE: not sure what this does
-  unknownBytes2?: Buffer; // NOTE: not sure what this does
+  unknownBytes2?: number[]; // NOTE: not sure what this does
 }
 
 export interface ItemsDatMeta {
