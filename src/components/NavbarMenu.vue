@@ -9,11 +9,11 @@ const sideVisible = ref(false);
 
 <template>
   <SidebarMenu v-model:visible="sideVisible" />
-  <Menubar class="!border-r-0 !border-l-0 !border-t-0">
+  <Menubar class="!border-r-0 !border-l-0 !border-t-0 !sticky !top-0">
     <template #start>
       <header class="flex items-center gap-x-2">
         <Button icon="pi pi-bars" text plain @click="sideVisible = !sideVisible"></Button>
-        <div>GrowTools</div>
+        <div class="font-bold text-lg">GrowTools</div>
       </header>
     </template>
   </Menubar>
