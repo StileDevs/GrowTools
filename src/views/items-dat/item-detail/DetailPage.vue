@@ -28,7 +28,8 @@ const toggleEditMode = () => {
 
 const saveChanges = () => {
   // TODO: Implement save logic
-  itemsdat.updateItem(editedItem.value);
+  console.log(editedItem.value);
+  // itemsdat.updateItem(editedItem.value);
   editMode.value = false;
 };
 </script>
@@ -36,35 +37,42 @@ const saveChanges = () => {
   <NotFoundView v-if="!item" />
   <Transition name="item-gt" mode="out-in" v-else>
     <MainContainer>
-      <div class="flex justify-between items-center mb-4">
-        <div class="flex gap-4 items-center">
+      <div class="flex justify-between items-center mb-4 gap-4">
+        <div class="flex flex-wrap gap-4 items-center">
           <RenderItemImage :item="item" width="64" height="64" />
           <div>
             <h1 class="font-bold text-xl">
               <template v-if="!editMode">{{ item.name }}</template>
-              <InputText type="text" v-else v-model="editedItem.name" />
+              <InputText type="text" fluid v-else v-model="editedItem.name" />
             </h1>
           </div>
         </div>
 
-        <div class="flex gap-2 items-center">
-          <div v-if="editMode" class="flex justify-end">
-            <Button @click="saveChanges" severity="success" label="Save Changes"></Button>
-          </div>
+        <div class="flex flex-wrap gap-2 items-center">
           <Button
+            v-if="editMode"
+            @click="saveChanges"
+            severity="success"
+            label="Save Changes"
+            class="w-full"
+          >
+          </Button>
+          <Button
+            class="w-full"
             @click="toggleEditMode"
             :label="editMode ? 'Cancel' : 'Edit'"
-            :severity="editMode ? 'danger' : ''"
+            :severity="editMode ? 'danger' : 'info'"
           >
           </Button>
         </div>
       </div>
 
-      <div class="grid grid-cols-2 gap-4">
-        <section class="border rounded p-4">
+      <div class="grid grid-cols-2 gap-6">
+        <section class="border rounded p-4 sm:col-span-1 col-span-2">
           <h3 class="font-bold mb-2">Basic Information</h3>
-          <div class="grid grid-cols-2 gap-2">
-            <template
+          <div>
+            <div
+              class="flex flex-wrap sm:flex-row flex-col gap-y-3 justify-between"
               v-for="(value, key) in {
                 id: item.id,
                 type: item.type,
@@ -76,17 +84,18 @@ const saveChanges = () => {
               }"
               :key="key"
             >
-              <div class="font-semibold">{{ key }}:</div>
-              <div v-if="!editMode">{{ value }}</div>
-              <InputNumber v-else v-model="editedItem[key]" type="number" />
-            </template>
+              <div class="font-semibold mt-1">{{ key }}:</div>
+              <div v-if="!editMode" class="break-all">{{ value }}</div>
+              <InputNumber v-else fluid v-model="editedItem[key]" type="number" />
+            </div>
           </div>
         </section>
 
-        <section class="border rounded p-4">
+        <section class="border rounded p-4 sm:col-span-1 col-span-2">
           <h3 class="font-bold mb-2">Flags</h3>
-          <div class="grid grid-cols-2 gap-2">
-            <template
+          <div>
+            <div
+              class="flex flex-wrap sm:flex-row flex-col gap-y-3 justify-between"
               v-for="(value, key) in {
                 flags: item.flags,
                 flagsCategory: item.flagsCategory,
@@ -98,17 +107,18 @@ const saveChanges = () => {
               }"
               :key="key"
             >
-              <div class="font-semibold">{{ key }}:</div>
-              <div v-if="!editMode">{{ value }}</div>
-              <InputNumber v-else v-model="editedItem[key]" type="number" />
-            </template>
+              <div class="font-semibold mt-1">{{ key }}:</div>
+              <div v-if="!editMode" class="break-all">{{ value }}</div>
+              <InputNumber v-else fluid v-model="editedItem[key]" type="number" />
+            </div>
           </div>
         </section>
 
-        <section class="border rounded p-4">
+        <section class="border rounded p-4 sm:col-span-1 col-span-2">
           <h3 class="font-bold mb-2">Texture Properties</h3>
-          <div class="grid grid-cols-2 gap-2">
-            <template
+          <div>
+            <div
+              class="flex flex-wrap sm:flex-row flex-col gap-y-3 justify-between"
               v-for="(value, key) in {
                 texture: item.texture,
                 textureHash: item.textureHash,
@@ -119,21 +129,23 @@ const saveChanges = () => {
               }"
               :key="key"
             >
-              <div class="font-semibold">{{ key }}:</div>
-              <div v-if="!editMode">{{ value }}</div>
+              <div class="font-semibold mt-1">{{ key }}:</div>
+              <div v-if="!editMode" class="brek-all">{{ value }}</div>
               <InputText
                 v-else
+                fluid
                 v-model="editedItem[key] as number | string"
                 :type="typeof value === 'number' ? 'number' : 'text'"
               />
-            </template>
+            </div>
           </div>
         </section>
 
-        <section class="border rounded p-4">
+        <section class="border rounded p-4 sm:col-span-1 col-span-2">
           <h3 class="font-bold mb-2">Pet Properties</h3>
-          <div class="grid grid-cols-2 gap-2">
-            <template
+          <div>
+            <div
+              class="flex flex-wrap sm:flex-row flex-col gap-y-3 justify-between"
               v-for="(value, key) in {
                 petName: item.petName,
                 petPrefix: item.petPrefix,
@@ -142,17 +154,18 @@ const saveChanges = () => {
               }"
               :key="key"
             >
-              <div class="font-semibold">{{ key }}:</div>
-              <div v-if="!editMode">{{ value }}</div>
-              <InputNumber v-else v-model="editedItem[key]" />
-            </template>
+              <div class="font-semibold mt-1">{{ key }}:</div>
+              <div v-if="!editMode" class="break-all">{{ value }}</div>
+              <InputNumber v-else fluid v-model="editedItem[key]" />
+            </div>
           </div>
         </section>
 
-        <section class="border rounded p-4">
+        <section class="border rounded p-4 sm:col-span-1 col-span-2">
           <h3 class="font-bold mb-2">Tree/Seed Properties</h3>
-          <div class="grid grid-cols-2 gap-2">
-            <template
+          <div>
+            <div
+              class="flex flex-wrap sm:flex-row flex-col gap-y-3 justify-between"
               v-for="(value, key) in {
                 seedBase: item.seedBase,
                 seedOverlay: item.seedOverlay,
@@ -163,17 +176,18 @@ const saveChanges = () => {
               }"
               :key="key"
             >
-              <div class="font-semibold">{{ key }}:</div>
+              <div class="font-semibold mt-1">{{ key }}:</div>
               <div v-if="!editMode">{{ value }}</div>
-              <InputText v-else v-model="editedItem[key]" type="text" />
-            </template>
+              <InputText v-else fluid v-model="editedItem[key]" type="text" />
+            </div>
           </div>
         </section>
 
-        <section class="border rounded p-4">
+        <section class="border rounded p-4 sm:col-span-1 col-span-2">
           <h3 class="font-bold mb-2">Additional Properties</h3>
-          <div class="grid grid-cols-2 gap-2">
-            <template
+          <div>
+            <div
+              class="flex flex-wrap sm:flex-row flex-col gap-y-3 justify-between"
               v-for="(value, key) in {
                 extraFile: item.extraFile,
                 extraFileHash: item.extraFileHash,
@@ -181,6 +195,22 @@ const saveChanges = () => {
                 extraOptions2: item.extraOptions2,
                 punchOptions: item.punchOptions,
                 itemRenderer: item.itemRenderer,
+              }"
+              :key="key"
+            >
+              <div class="font-semibold mt-1">{{ key }}:</div>
+              <div v-if="!editMode" class="break-all">{{ value }}</div>
+              <InputText v-else fluid v-model="editedItem[key]" :type="'text'" />
+            </div>
+          </div>
+        </section>
+
+        <section class="border rounded p-4 col-span-2">
+          <h3 class="font-bold mb-2">Array Bytes Properties</h3>
+          <div>
+            <div
+              class="flex flex-wrap sm:flex-row flex-col gap-y-3 justify-between"
+              v-for="(value, key) in {
                 extraByte: item.extraBytes,
                 bodyPart: item.bodyPart,
                 unknownBytes1: item.unknownBytes1,
@@ -188,10 +218,10 @@ const saveChanges = () => {
               }"
               :key="key"
             >
-              <div class="font-semibold">{{ key }}:</div>
-              <div v-if="!editMode">{{ value }}</div>
-              <InputText v-else v-model="editedItem[key]" :type="'text'" />
-            </template>
+              <div class="font-semibold mt-1">{{ key }}:</div>
+              <div v-if="!editMode" class="break-all">{{ value }}</div>
+              <InputText v-else fluid v-model="editedItem[key]" :type="'text'" />
+            </div>
           </div>
         </section>
       </div>
